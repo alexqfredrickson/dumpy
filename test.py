@@ -7,9 +7,10 @@ from utils import DumpyfileUtils
 
 class DumpyTests(unittest.TestCase):
 
-    context = "example"
+    context = "cloudprac"
     dumpy = Dumpy(context)
 
+    @unittest.skip
     def test_create_context(self):
         questions = []
 
@@ -41,13 +42,8 @@ class DumpyTests(unittest.TestCase):
 
         DumpyfileUtils.create(questions, self.context)
 
-        self.dumpy.create_context(
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "dumpyfiles",
-                self.context.lower() + ".dumpy"
-            )
-        )
+        self.dumpy.create_context()
 
     def test_execute(self):
+        self.dumpy.create_context()
         self.dumpy.run()

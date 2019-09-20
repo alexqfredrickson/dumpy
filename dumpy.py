@@ -12,27 +12,33 @@ class Dumpy:
         self.context = context
         self.questions = questions if questions else []
 
+        self.dumpyfile_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "dumpyfiles",
+            self.context.lower() + ".dumpy"
+        )
+
         self.sqlite_context_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "contexts",
             self.context.lower() + ".db"
         )
 
-    def create_context(self, dumpyfile_path):
+    def create_context(self):
         """
         Creates a local Dumpy database and imports questions/answers from the specified Dumpyfile path.
 
-        :param dumpyfile_path: The path to the Dumpyfile (this project has a default repository located at /dumpy/dumpyfiles/).
-        :type dumpyfile_path: str
         """
 
         self.create_database_context()
-        self.import_dumpyfile(dumpyfile_path)
+        self.import_dumpyfile()
 
     def load(self):
         """
 
         """
+
+        self.questions = []
 
         questions, answers, conn = None, None, None
 
@@ -213,14 +219,13 @@ class Dumpy:
             if conn:
                 conn.close()
 
-    def import_dumpyfile(self, dumpyfile_path):
+    def import_dumpyfile(self):
         """
 
-        :param dumpyfile_path:
         :return:
         """
 
-        self.parse_dumpyfile(dumpyfile_path)
+        self.parse_dumpyfile(self.dumpyfile_path)
 
         conn = None
 
