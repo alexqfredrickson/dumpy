@@ -10,7 +10,6 @@ class DumpyTests(unittest.TestCase):
     context = "example"
     dumpy = Dumpy(context)
 
-    @unittest.skip
     def test_create_context(self):
         questions = []
 

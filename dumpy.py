@@ -117,7 +117,7 @@ class Dumpy:
                 if all_inputs_are_valid:
                     chosen_answer_ids = [a.answer_id for a in q.answers if a.letter.lower() in list(answer.lower())]
 
-                    if all(chosen_answer_id in q.correct_answer_ids for chosen_answer_id in chosen_answer_ids):
+                    if sorted(chosen_answer_ids) == sorted(q.correct_answer_ids):
                         print(
                             "CORRECT: {}\n{}".format(
                                 " and ".join(a.letter for a in q.correct_answers),

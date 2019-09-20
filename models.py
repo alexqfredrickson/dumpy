@@ -18,6 +18,6 @@ class Answer:
     def __init__(self, text, letter=None, is_correct=False, answer_id=None, question_id=None):
         self.text = str(text)
         self.letter = str(letter) if letter else None
-        self.is_correct = bool(is_correct) if is_correct else None
+        self.is_correct = bool(is_correct) if is_correct else False
         self.answer_id = int(answer_id) if answer_id else None
         self.question_id = int(question_id) if question_id else None

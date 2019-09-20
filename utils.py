@@ -28,6 +28,14 @@ class DumpyfileUtils:
         def obj_dict(obj):
             return obj.__dict__
 
+        for q in questions:
+            del q.question_id
+
+            for a in q.answers:
+                del a.answer_id
+                del a.letter
+                del a.question_id
+
         questions_json_string = json.dumps(questions, default=obj_dict, indent=4)
 
         with open(dumpyfile_path, 'w') as dumpyfile:
