@@ -13,6 +13,10 @@ class Question:
     def correct_answer_ids(self):
         return [a.answer_id for a in self.answers if a.is_correct]
 
+    def assign_letters_to_answers(self):
+        for i in range(len(self.answers)):
+            self.answers[i].letter = chr(i + 65)
+
 
 class Answer:
     def __init__(self, text, letter=None, is_correct=False, answer_id=None, question_id=None):

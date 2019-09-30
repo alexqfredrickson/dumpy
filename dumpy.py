@@ -2,7 +2,6 @@ import os
 import json
 import sqlite3
 import textwrap
-import string
 from random import shuffle
 from models import Question, Answer
 
@@ -77,8 +76,7 @@ class Dumpy:
                 answer_id=a[0],
                 question_id=a[1],
                 text=a[2],
-                letter=a[3],
-                is_correct=True if a[4] == 1 else False
+                is_correct=True if a[3] == 1 else False
             )
             for a in answers
         ]
@@ -90,15 +88,20 @@ class Dumpy:
 
                 q.answers.append(a)
 
-    def execute_braindump(self):
         shuffle(self.questions)
 
-        print("")
+        for q in self.questions:
+            shuffle(q.answers)
+            q.assign_letters_to_answers()
+
+    def execute_braindump(self):
 
         total_correct_count = 0
         total_displayed_count = 0
 
         for q in self.questions:
+            os.system('cls' if os.name == 'nt' else 'clear')
+
             total_displayed_count += 1
             valid_answer_choices = [a.letter.lower() for a in q.answers]
 
@@ -132,22 +135,26 @@ class Dumpy:
                         )
                         total_correct_count += 1
                     else:
-                        if len(q.correct_answer_ids) == 1:
-                            print(
-                                "FALSE: The correct answer is {}.\n{}".format(
-                                    q.correct_answers[0].letter,
-                                    "\n{}\n".format(q.postmortem) if q.postmortem else ""
-                                )
-                            )
+                        if len(q.correct_answer_ids) != len(chosen_answer_ids):
+                            print("ERROR: please provide the correct amount of answer(s); eg. 'C', 'DA'.")
+                            answer = None
                         else:
-                            print(
-                                "FALSE: The correct answers are {}.\n\n{}\n".format(
-                                    " and ".join(a.letter for a in q.correct_answers),
-                                    textwrap.fill(q.postmortem, 100) if q.postmortem else ""
+                            if len(q.correct_answer_ids) == 1:
+                                print(
+                                    "FALSE: The correct answer is {}.\n{}".format(
+                                        q.correct_answers[0].letter,
+                                        "\n{}\n".format(q.postmortem) if q.postmortem else ""
+                                    )
                                 )
-                            )
+                            else:
+                                print(
+                                    "FALSE: The correct answers are {}.\n\n{}\n".format(
+                                        " and ".join(a.letter for a in q.correct_answers),
+                                        textwrap.fill(q.postmortem, 100) if q.postmortem else ""
+                                    )
+                                )
                 else:
-                    print("ERROR: please provide a letter (eg. 'C').".format(answer))
+                    print("ERROR: please provide your answer(s); eg. 'C', 'DA'.")
                     answer = None
 
             percent = (total_correct_count / total_displayed_count) * 100
@@ -166,7 +173,7 @@ class Dumpy:
             print("CURRENT GRADE: " + grade + " ({}/{} correct)".format(total_correct_count, total_displayed_count))
             print("Press any key to continue.")
             input()
-            os.system('cls' if os.name == 'nt' else 'clear')
+
 
     def delete_context(self):
         pass
@@ -204,7 +211,6 @@ class Dumpy:
                 " `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,"
                 " `question_id`	INTEGER NOT NULL,"
                 " `text`	TEXT NOT NULL,"
-                " `letter`	TEXT NOT NULL,"
                 " `is_correct`	INTEGER NOT NULL DEFAULT 0"
                 ")"
             )
@@ -229,8 +235,6 @@ class Dumpy:
 
         conn = None
 
-        alphabet_dictionary = dict(enumerate(string.ascii_lowercase, 1))
-
         try:
             conn = sqlite3.connect(self.sqlite_context_path)
             c = conn.cursor()
@@ -248,10 +252,9 @@ class Dumpy:
 
                 for i in range(len(q.answers)):
                     c.execute(
-                        "INSERT INTO answers (question_id, text, letter, is_correct) VALUES ({},'{}','{}',{})".format(
+                        "INSERT INTO answers (question_id, text, is_correct) VALUES ({},'{}',{})".format(
                             q.answers[i].question_id,
                             q.answers[i].text.replace("'", "''"),
-                            alphabet_dictionary[i+1].upper(),
                             1 if q.answers[i].is_correct else 0
                         )
                     )
