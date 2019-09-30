@@ -23,19 +23,35 @@ class Dumpy:
             self.context.lower() + ".db"
         )
 
+        if not os.path.exists(self.sqlite_context_path):
+            print(
+                "INFO: A database with the specified context ({}) does not yet exist.".format(self.sqlite_context_path)
+            )
+
+            print("INFO: Attempting to create one from {}...".format(self.dumpyfile_path))
+
+            self.create_context()
+
     def create_context(self):
         """
-        Creates a local Dumpy database and imports questions/answers from the specified Dumpyfile path.
-
+        Creates a local Dumpy database, and inserts questions/answers from the specified Dumpyfile path.
         """
 
         self.create_database_context()
         self.import_dumpyfile()
 
-    def load(self):
+    def load_questions(self):
+        """
+        Validates the existence of the local dumpy database and loads all questions/answers from it.
         """
 
-        """
+        if not os.path.exists(self.sqlite_context_path):
+            print("WARNING: the dumpy database was not found in [project root]/dumpy/. Attempting to create one...")
+            self.create_context()
+
+            if not os.path.exists(self.sqlite_context_path):
+                print("ERROR: the dumpy database has not been created.")
+                exit(1)
 
         self.questions = []
 
@@ -95,6 +111,11 @@ class Dumpy:
             q.assign_letters_to_answers()
 
     def execute_braindump(self):
+        """
+        Loads questions from the local database and executes a braindump from the local questions list.
+        """
+
+        self.load_questions()
 
         total_correct_count = 0
         total_displayed_count = 0
@@ -174,7 +195,6 @@ class Dumpy:
             print("Press any key to continue.")
             input()
 
-
     def delete_context(self):
         pass
 
@@ -182,15 +202,16 @@ class Dumpy:
         pass
 
     def run(self):
-
-        self.load()
         self.execute_braindump()
 
     def create_database_context(self):
         """
-        Creates the basic schema
-
+        Creates a local, empty Dumpy database under '[project root]/contexts/'.
         """
+
+        if not os.path.exists(os.path.dirname(self.sqlite_context_path)):
+            pass
+            os.mkdir(os.path.dirname(self.sqlite_context_path))
 
         conn = None
 
@@ -227,8 +248,7 @@ class Dumpy:
 
     def import_dumpyfile(self):
         """
-
-        :return:
+        Parses a .dumpy file and inserts this data into the local Dumpy database.
         """
 
         self.parse_dumpyfile(self.dumpyfile_path)
@@ -271,6 +291,16 @@ class Dumpy:
                 conn.close()
 
     def parse_dumpyfile(self, dumpyfile_path):
+        """
+        Proves the existence of the local .dumpy file and inserts it into the local dumpy database.
+        """
+
+        if not os.path.exists(dumpyfile_path):
+            print(
+                "ERROR: the dumpyfile ({}) was not found.  Its default location is '[project root]/dumpyfiles/'."
+                    .format(dumpyfile_path)
+            )
+            exit(1)
 
         with open(dumpyfile_path, 'r') as dumpyfile:
             contents = json.loads(dumpyfile.read())
@@ -279,12 +309,15 @@ class Dumpy:
 
             for i in range(question_count):
 
-                question = Question(
-                    question_id=i + 1,
-                    text=contents[i]["text"],
-                    postmortem=contents[i]["postmortem"] if "postmortem" in contents[i] else None,
-                    answers=[]
-                )
+                try:
+                    question = Question(
+                        question_id=i + 1,
+                        text=contents[i]["text"],
+                        postmortem=contents[i]["postmortem"] if "postmortem" in contents[i] else None,
+                        answers=[]
+                    )
+                except Exception as e:
+                    print(e)
 
                 answer_count = len(contents[i]["answers"])
 
@@ -301,4 +334,3 @@ class Dumpy:
                     )
 
                 self.questions.append(question)
-

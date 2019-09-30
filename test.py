@@ -45,5 +45,4 @@ class DumpyTests(unittest.TestCase):
         self.dumpy.create_context()
 
     def test_execute(self):
-        # self.dumpy.create_context()
-        self.dumpy.run()
+        self.dumpy.execute_braindump()
