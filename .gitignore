@@ -3,6 +3,7 @@
 
 contexts/
 dumpyfiles/
+dumpy.config
 
 
 # basic python gitignore
