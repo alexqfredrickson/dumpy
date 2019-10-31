@@ -23,35 +23,12 @@ class Dumpy:
             self.context.lower() + ".db"
         )
 
-        if not os.path.exists(self.sqlite_context_path):
-            print(
-                "INFO: A database with the specified context ({}) does not yet exist.".format(self.sqlite_context_path)
-            )
-
-            print("INFO: Attempting to create one from {}...".format(self.dumpyfile_path))
-
-            self.create_context()
-
-    def create_context(self):
-        """
-        Creates a local Dumpy database, and inserts questions/answers from the specified Dumpyfile path.
-        """
-
-        self.create_database_context()
-        self.import_dumpyfile()
+        self.shuffle_answers = True
 
     def load_questions(self):
         """
         Validates the existence of the local dumpy database and loads all questions/answers from it.
         """
-
-        if not os.path.exists(self.sqlite_context_path):
-            print("WARNING: the dumpy database was not found in [project root]/dumpy/. Attempting to create one...")
-            self.create_context()
-
-            if not os.path.exists(self.sqlite_context_path):
-                print("ERROR: the dumpy database has not been created.")
-                exit(1)
 
         self.questions = []
 
@@ -76,17 +53,6 @@ class Dumpy:
             if conn:
                 conn.close()
 
-        self.questions.extend(
-            [
-                Question(
-                    question_id=q[0],
-                    text=q[1],
-                    postmortem=q[2]
-                )
-                for q in questions
-            ]
-        )
-
         answers = [
             Answer(
                 answer_id=a[0],
@@ -97,25 +63,91 @@ class Dumpy:
             for a in answers
         ]
 
+        self.questions.extend(
+            [
+                Question(
+                    question_id=q[0],
+                    text=q[1],
+                    postmortem=q[2],
+                    answers=[a for a in answers if int(a.question_id) == q[0]]
+                )
+                for q in questions
+            ]
+        )
+
+        if self.shuffle_answers:
+            shuffle(self.questions)
+
         for q in self.questions:
-            for a in answers:
-                if a.question_id != q.question_id:
-                    continue
-
-                q.answers.append(a)
-
-        shuffle(self.questions)
-
-        for q in self.questions:
-            shuffle(q.answers)
             q.assign_letters_to_answers()
 
     def execute_braindump(self):
         """
-        Loads questions from the local database and executes a braindump from the local questions list.
+        Validates the local database, loads questions it, and begins the braindump.
         """
 
+        self.validate_database()
         self.load_questions()
+        self.begin_braindump()
+
+    def validate_database(self):
+
+        # check if database exists
+        if not os.path.exists(self.sqlite_context_path):
+            print(
+                "INFO: A database with the specified context ({}) does not yet exist.".format(self.sqlite_context_path)
+            )
+
+            print("INFO: Attempting to create one from {}...".format(self.dumpyfile_path))
+
+            self.create_context()
+
+            if not os.path.exists(self.sqlite_context_path):
+                print("ERROR: the dumpy database has not been created.")
+                exit(1)
+
+        # check if questions table exists
+        questions_table_exists = False
+
+        try:
+            conn = sqlite3.connect(self.sqlite_context_path)
+            c = conn.cursor()
+
+            c.execute("SELECT name FROM sqlite_master WHERE name='questions'")
+            questions_table_exists = c.fetchall()
+
+            conn.close()
+
+        except Exception as e:
+            print(e)
+            exit(1)
+
+        if not questions_table_exists:
+            print("ERROR: No questions table was found. Deleting local database...")
+
+        # check to see if it actually has questions
+        question_count = 0
+
+        try:
+            conn = sqlite3.connect(self.sqlite_context_path)
+            c = conn.cursor()
+
+            c.execute("SELECT COUNT(*) FROM questions")
+            question_count = c.fetchall()
+
+            conn.close()
+
+        except Exception as e:
+            print(e)
+            exit(1)
+
+        if len(question_count) == 0:
+            self.delete_context("No questions were found.")
+
+    def begin_braindump(self):
+        """
+        Starts the test.
+        """
 
         total_correct_count = 0
         total_displayed_count = 0
@@ -195,14 +227,28 @@ class Dumpy:
             print("Press any key to continue.")
             input()
 
-    def delete_context(self):
-        pass
+    def create_context(self):
+        """
+        If the .dumpy file is valid, creates a local Dumpy database and inserts questions/answers into it.
+        """
 
-    def list_contexts(self):
-        pass
+        self.validate_dumpyfile()
+        self.create_database_context()
+        self.import_dumpyfile()
 
-    def run(self):
-        self.execute_braindump()
+    def validate_dumpyfile(self):
+        """
+        Ensures the .dumpy file is properly formatted.
+        """
+
+        try:
+            self.parse_dumpyfile(self.dumpyfile_path)
+        except json.decoder.JSONDecodeError as e:
+            print("ERROR: the .dumpy file has an invalid format.")
+            print(e)
+            exit(1)
+
+        return True
 
     def create_database_context(self):
         """
@@ -210,7 +256,6 @@ class Dumpy:
         """
 
         if not os.path.exists(os.path.dirname(self.sqlite_context_path)):
-            pass
             os.mkdir(os.path.dirname(self.sqlite_context_path))
 
         conn = None
@@ -250,8 +295,6 @@ class Dumpy:
         """
         Parses a .dumpy file and inserts this data into the local Dumpy database.
         """
-
-        self.parse_dumpyfile(self.dumpyfile_path)
 
         conn = None
 
@@ -297,32 +340,36 @@ class Dumpy:
 
         if not os.path.exists(dumpyfile_path):
             print(
-                "ERROR: the dumpyfile ({}) was not found.  Its default location is '[project root]/dumpyfiles/'."
-                    .format(dumpyfile_path)
+                "ERROR: the dumpyfile ({}) was not found. "
+                "Its default location is '[project root]/dumpyfiles/'.".format(dumpyfile_path)
             )
             exit(1)
 
         with open(dumpyfile_path, 'r') as dumpyfile:
             contents = json.loads(dumpyfile.read())
 
-            question_count = len(contents)
+            question_count = len(contents["questions"])
 
             for i in range(question_count):
+
+                question = None
+
+                this_question = contents["questions"][i]
 
                 try:
                     question = Question(
                         question_id=i + 1,
-                        text=contents[i]["text"],
-                        postmortem=contents[i]["postmortem"] if "postmortem" in contents[i] else None,
+                        text=this_question["text"],
+                        postmortem=this_question["postmortem"] if "postmortem" in this_question else None,
                         answers=[]
                     )
                 except Exception as e:
                     print(e)
 
-                answer_count = len(contents[i]["answers"])
+                answer_count = len(this_question["answers"])
 
                 for j in range(answer_count):
-                    answer = contents[i]["answers"][j]
+                    answer = this_question["answers"][j]
 
                     question.answers.append(
                         Answer(
@@ -334,3 +381,11 @@ class Dumpy:
                     )
 
                 self.questions.append(question)
+
+    def delete_context(self, message):
+        print("ERROR: {} Deleting local database...".format(message))
+        os.remove(self.sqlite_context_path)
+        exit(1)
+
+    def list_contexts(self):
+        pass

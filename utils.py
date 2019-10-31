@@ -8,12 +8,14 @@ class DumpyfileUtils:
         pass
 
     @staticmethod
-    def create(questions, context):
+    def create(metadata, questions, context):
         """
         Creates a .dumpy file in the local ~/dumpy/dumpyfiles/ directory based on the provided Questions.
 
         :param questions: A list of questions with accompanying answers.
         :type questions: list of Question
+        :param metadata: The metadata of the .dumpy file.
+        :type metadata: Metadata
         :param context: The name of the resulting dumpyfile (e.g. if context=test --> test.dumpy will be created).
         :type context: str
         """
@@ -36,8 +38,13 @@ class DumpyfileUtils:
                 del a.letter
                 del a.question_id
 
-        questions_json_string = json.dumps(questions, default=obj_dict, indent=4)
+        json_contents = {
+            "metadata": metadata,
+            "questions": questions
+        }
+
+        json_string = json.dumps(json_contents, default=obj_dict, indent=4)
 
         with open(dumpyfile_path, 'w') as dumpyfile:
-            dumpyfile.write(questions_json_string)
+            dumpyfile.write(json_string)
 
