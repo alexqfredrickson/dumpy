@@ -189,7 +189,12 @@ class Dumpy:
                         total_correct_count += 1
                     else:
                         if len(q.correct_answer_ids) != len(chosen_answer_ids):
-                            print("ERROR: please provide the correct amount of answer(s); eg. 'C', 'DA'.")
+
+                            print(
+                                "ERROR: the provided answer ('{}') is invalid.\n"
+                                "Please provide the correct amount of answer(s); eg. 'C', 'DA'.".format(answer.lower())
+                            )
+
                             answer = None
                         else:
                             if len(q.correct_answer_ids) == 1:
@@ -207,7 +212,10 @@ class Dumpy:
                                     )
                                 )
                 else:
-                    print("ERROR: please provide your answer(s); eg. 'C', 'DA'.")
+                    print(
+                        "ERROR: the provided answer ('{}') is invalid.\n"
+                        "Please provide answers from the above list; eg. 'C', 'DA'.".format(answer.lower())
+                    )
                     answer = None
 
             percent = (total_correct_count / total_displayed_count) * 100
@@ -224,7 +232,7 @@ class Dumpy:
                 grade = "D"
 
             print("CURRENT GRADE: " + grade + " ({}/{} correct)".format(total_correct_count, total_displayed_count))
-            print("Press any key to continue.")
+            print("Press the enter key to continue.")
             input()
 
     def create_context(self):
