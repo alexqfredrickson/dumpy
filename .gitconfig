@@ -1,2 +1,3 @@
 [core]
   autocrlf = true
+  whitespace = cr-at-eol
