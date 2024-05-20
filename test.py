@@ -44,7 +44,3 @@ class DumpyTests(unittest.TestCase):
         DumpyfileUtils.create(metadata, questions, dumpy.context)
 
         dumpy.execute_braindump()
-
-    @staticmethod
-    def test_execute():
-        Dumpy(DumpyConfig().default_braindump_filename).execute_braindump()

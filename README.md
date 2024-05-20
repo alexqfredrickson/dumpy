@@ -70,5 +70,4 @@ For example:
 To run a braindump:
 
 1. Set the `DUMPY_FILEPATH` environmental variable to point to a valid `dumpyfile`.`.
-2. `cd /path/to/dumpy`
-3. `python3 -m unittest test.py`
+2. Run `python3 dumpy.py`.
