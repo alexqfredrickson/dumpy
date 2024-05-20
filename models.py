@@ -1,8 +1,5 @@
-import os
-import json
-
 """
-Objects found in .dumpy and configuration files.
+Objects parsed out from .dumpy files.
 """
 
 
@@ -39,19 +36,3 @@ class Answer:
         self.is_correct = bool(is_correct) if is_correct else False
         self.answer_id = int(answer_id) if answer_id else None
         self.question_id = int(question_id) if question_id else None
-
-
-class DumpyConfig:
-    def __init__(self):
-
-        config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dumpy.config")
-
-        if not os.path.exists(config_file_path):
-            print("ERROR: A configuration file needs to be created at the root.")
-            exit(1)
-
-        with open(config_file_path, 'r') as config_file:
-            config_file_contents = json.loads(config_file.read())
-
-        self.default_braindump_filename = config_file_contents["default_braindump_filename"]
-

@@ -7,20 +7,25 @@ from models import Question, Answer
 
 
 class Dumpy:
-    def __init__(self, context, questions=None):
-        self.context = context
+    def __init__(self, questions=None):
         self.questions = questions if questions else []
 
-        self.dumpyfile_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "dumpyfiles",
-            self.context.lower() + ".dumpy"
-        )
+        if not "DUMPY_FILEPATH" in os.environ:
+            print(f"ERROR: The environment variable `DUMPY_FILEPATH` was not set.")
+            exit(1)
+        else:
+            self.dumpyfile_path = os.environ["DUMPY_FILEPATH"]
+
+        if not os.path.exists(self.dumpyfile_path):
+            print(f"ERROR: {self.dumpyfile_path} was not found.")
+            exit(1)
+            
+        self.dumpyfile_name = os.path.basename(self.dumpyfile_path)
 
         self.sqlite_context_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "contexts",
-            self.context.lower() + ".db"
+            self.dumpyfile_name + ".db"
         )
 
         self.shuffle_answers = True
@@ -106,10 +111,7 @@ class Dumpy:
                 print("ERROR: the dumpy database has not been created.")
                 exit(1)
 
-        # check if questions table exists
-        questions_table_exists = False
-
-        try:
+        try:  # check if questions table exists
             conn = sqlite3.connect(self.sqlite_context_path)
             c = conn.cursor()
 
@@ -125,10 +127,7 @@ class Dumpy:
         if not questions_table_exists:
             print("ERROR: No questions table was found. Deleting local database...")
 
-        # check to see if it actually has questions
-        question_count = 0
-
-        try:
+        try:  # check to see if it actually has questions
             conn = sqlite3.connect(self.sqlite_context_path)
             c = conn.cursor()
 
@@ -395,5 +394,6 @@ class Dumpy:
         os.remove(self.sqlite_context_path)
         exit(1)
 
-    def list_contexts(self):
-        pass
+
+if __name__ == "__main__":
+    Dumpy().execute_braindump()

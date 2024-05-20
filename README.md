@@ -1,25 +1,14 @@
 # dumpy
 
-`dumpy` is a Python 3 framework that issues multiple-choice quizzes - or "braindumps" - in your terminal.
+`dumpy` is a Python 3.7+ framework that issues multiple-choice quizzes - or "braindumps" - in your terminal.
 
 `dumpy` parses `dumpyfile`s into a local SQLite3 database. Questions are loaded  
 from the database, from which CLI-based "braindumps" are administered.
 
-## requirements
-`dumpy` requires Python 3.7+.
-
 ## configuration
 
-`dumpy` requires a `dumpy.config` in `.json` format in the project's root directory:
-
-```
-{
-    # The name of the default .dumpy file to load on program execution.
-    "default_braindump_filename": "foobar.dumpy"
-}
-```
-
-`dumpy` also requires `dumpyfile`, located in a directory in the project's root directory, called `dumpyfiles/`.
+`dumpy` requires an environment variable called `DUMPY_FILEPATH`, which tells `dumpy` which 
+`dumpyfile` to load. 
 
 ### dumpyfiles
 
@@ -45,7 +34,7 @@ For example:
 ```json
 {
   "metadata": {
-    "description": "Fine Feathered Friends: A Bird Quiz",
+    "description": "Fine-Feathered Friends: A Quiz About Birds",
     "shuffle_answers": true
   },
   "questions": [
@@ -80,8 +69,6 @@ For example:
 
 To run a braindump:
 
-1. Create a `~/dumpyfiles/` directory in the project root.
-2. Create  `.dumpyfile` and put it in this directory.
-3. Create a `dumpy.config` file in the project root, and specify a `default_braindump_filename`.
-4. `cd /path/to/dumpy`
-5. `python3 -m unittest test.py`
+1. Set the `DUMPY_FILEPATH` environmental variable to point to a valid `dumpyfile`.`.
+2. `cd /path/to/dumpy`
+3. `python3 -m unittest test.py`
