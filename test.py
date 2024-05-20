@@ -47,4 +47,4 @@ class DumpyTests(unittest.TestCase):
 
     @staticmethod
     def test_execute():
-        Dumpy(DumpyConfig().default_context).execute_braindump()
+        Dumpy(DumpyConfig().default_braindump_filename).execute_braindump()

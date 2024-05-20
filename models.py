@@ -53,5 +53,5 @@ class DumpyConfig:
         with open(config_file_path, 'r') as config_file:
             config_file_contents = json.loads(config_file.read())
 
-        self.default_context = config_file_contents["default_context"]
+        self.default_braindump_filename = config_file_contents["default_braindump_filename"]
 
