@@ -19,7 +19,7 @@ class Dumpy:
         if not os.path.exists(self.dumpyfile_path):
             print(f"ERROR: {self.dumpyfile_path} was not found.")
             exit(1)
-            
+
         self.dumpyfile_name = os.path.basename(self.dumpyfile_path)
 
         self.sqlite_context_path = os.path.join(
@@ -100,10 +100,10 @@ class Dumpy:
         # check if database exists
         if not os.path.exists(self.sqlite_context_path):
             print(
-                "INFO: A database with the specified context ({}) does not yet exist.".format(self.sqlite_context_path)
+                f"INFO: A database with the specified context ({self.sqlite_context_path}) does not yet exist."
             )
 
-            print("INFO: Attempting to create one from {}...".format(self.dumpyfile_path))
+            print(f"INFO: Attempting to create one from {self.dumpyfile_path}...")
 
             self.create_context()
 
@@ -157,14 +157,10 @@ class Dumpy:
             total_displayed_count += 1
             valid_answer_choices = [a.letter.lower() for a in q.answers]
 
-            print(
-                "{}\n".format(
-                    textwrap.fill(q.text, 100)
-                )
-            )
+            print(f"{textwrap.fill(q.text, 100)}\n")
 
             for a in q.answers:
-                print("  {}. {}".format(a.letter, textwrap.fill(a.text, 80)))
+                print(f"  {a.letter}. {textwrap.fill(a.text, 80)}")
 
             print("")
 
@@ -345,13 +341,6 @@ class Dumpy:
         Proves the existence of the local .dumpy file and inserts it into the local dumpy database.
         """
 
-        if not os.path.exists(dumpyfile_path):
-            print(
-                "ERROR: the dumpyfile ({}) was not found. "
-                "Its default location is '[project root]/dumpyfiles/'.".format(dumpyfile_path)
-            )
-            exit(1)
-
         with open(dumpyfile_path, 'r') as dumpyfile:
             contents = json.loads(dumpyfile.read())
 
@@ -390,7 +379,7 @@ class Dumpy:
                 self.questions.append(question)
 
     def delete_context(self, message):
-        print("ERROR: {} Deleting local database...".format(message))
+        print(f"ERROR: {message} Deleting local database...")
         os.remove(self.sqlite_context_path)
         exit(1)
 
