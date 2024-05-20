@@ -356,13 +356,13 @@ class Dumpy:
         with open(dumpyfile_path, 'r') as dumpyfile:
             contents = json.loads(dumpyfile.read())
 
-            question_count = len(contents)
+            question_count = len(contents["questions"])
 
             for i in range(question_count):
 
                 question = None
 
-                this_question = contents[i]
+                this_question = contents["questions"][i]
 
                 try:
                     question = Question(
