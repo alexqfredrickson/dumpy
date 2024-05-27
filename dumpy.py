@@ -10,7 +10,7 @@ class Dumpy:
     def __init__(self, questions=None):
         self.questions = questions if questions else []
 
-        if not "DUMPY_FILEPATH" in os.environ:
+        if "DUMPY_FILEPATH" not in os.environ:
             print(f"ERROR: The environment variable `DUMPY_FILEPATH` was not set.")
             exit(1)
         else:
@@ -306,23 +306,33 @@ class Dumpy:
             c = conn.cursor()
 
             for q in self.questions:
+
+                question_id = q.question_id
+                question_text = q.text.replace(f"\'", "\'\'")
+                question_postmortem = q.postmortem.replace(f"\'", "\'\'") if q.postmortem else ""
+
                 c.execute(
-                    "INSERT INTO questions VALUES ({},'{}'{})".format(
-                        q.question_id,
-                        q.text.replace("'", "''"),
-                        ",'{}'".format(q.postmortem.replace("'", "''")) if q.postmortem else ""
-                    )
+                    f"INSERT INTO questions VALUES ("
+                    f"{question_id},"
+                    f"'{question_text}',"
+                    f"'{question_postmortem}'"
+                    f")"
                 )
 
                 conn.commit()
 
                 for i in range(len(q.answers)):
+
+                    answer_question_id = q.answers[i].question_id
+                    answer_text = q.answers[i].text.replace("'", "''")
+                    answer_is_correct = 1 if q.answers[i].is_correct else 0
+
                     c.execute(
-                        "INSERT INTO answers (question_id, text, is_correct) VALUES ({},'{}',{})".format(
-                            q.answers[i].question_id,
-                            q.answers[i].text.replace("'", "''"),
-                            1 if q.answers[i].is_correct else 0
-                        )
+                        f"INSERT INTO answers (question_id, text, is_correct) VALUES ("
+                        f"{answer_question_id}, "
+                        f"'{answer_text}', "
+                        f"'{answer_is_correct}'"
+                        f")"
                     )
 
                     conn.commit()
@@ -367,16 +377,21 @@ class Dumpy:
                 for j in range(answer_count):
                     answer = this_question["answers"][j]
 
+                    if "is_correct" not in answer:
+                        pass
+
                     question.answers.append(
                         Answer(
                             answer_id=j + 1,
                             question_id=i + 1,
                             text=answer["text"],
-                            is_correct=answer["is_correct"] if "is_correct" in answer else None
+                            is_correct=answer["is_correct"]
                         )
                     )
 
                 self.questions.append(question)
+
+            print("INFO: Dumpyfile parsing complete.")
 
     def delete_context(self, message):
         print(f"ERROR: {message} Deleting local database...")
