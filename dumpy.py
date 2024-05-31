@@ -173,34 +173,23 @@ class Dumpy:
 
                 if all_inputs_are_valid:
                     chosen_answer_ids = [a.answer_id for a in q.answers if a.letter.lower() in list(answer.lower())]
+                    correct_answers = " and ".join(a.letter for a in q.correct_answers)
+                    postmortem = f"\n{q.postmortem}\n" if q.postmortem else ""
 
                     if sorted(chosen_answer_ids) == sorted(q.correct_answer_ids):
-                        print(
-                            f"CORRECT: {" and ".join(a.letter for a in q.correct_answers)}\n"
-                            f"{f"\n{q.postmortem}\n" if q.postmortem else ""}"
-                        )
+                        print(f"CORRECT: {correct_answers}\n{postmortem}")
                         total_correct_count += 1
+
                     else:
                         if len(q.correct_answer_ids) != len(chosen_answer_ids):
-
-                            print(
-                                f"ERROR: the provided answer ('{answer.lower()}') is invalid.\n"
-                                f"Please provide the correct amount of answer(s); eg. 'C', 'DA'."
-                            )
-
+                            print(f"ERROR: please provide exactly {len(chosen_answer_ids)} answer(s); eg. 'C', 'DA'.")
                             answer = None
+
                         else:
                             if len(q.correct_answer_ids) == 1:
-                                print(
-                                    f"FALSE: The correct answer is {q.correct_answers[0].letter}.\n"
-                                    f"{f"\n{q.postmortem}\n" if q.postmortem else ""}"
-                                )
+                                print(f"FALSE: The correct answer is {q.correct_answers[0].letter}.\n{postmortem}")
                             else:
-                                print(
-                                    f"FALSE: The correct answers are "
-                                    f"{' and '.join(a.letter for a in q.correct_answers)}."
-                                    f"\n\n{textwrap.fill(q.postmortem, 100) if q.postmortem else ""}\n"
-                                )
+                                print(f"FALSE: The correct answers are {correct_answers}.\n{postmortem}")
                 else:
                     print(
                         f"ERROR: the provided answer ('{answer.lower()}') is invalid.\n"
