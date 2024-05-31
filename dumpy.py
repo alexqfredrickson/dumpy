@@ -157,10 +157,10 @@ class Dumpy:
             total_displayed_count += 1
             valid_answer_choices = [a.letter.lower() for a in q.answers]
 
-            print(f"{textwrap.fill(q.text, 100)}\n")
+            print(f"{q.text}\n")
 
             for a in q.answers:
-                print(f"  {a.letter}. {textwrap.fill(a.text, 80)}")
+                print(f"  {a.letter}. {a.text}")
 
             print("")
 
@@ -176,40 +176,35 @@ class Dumpy:
 
                     if sorted(chosen_answer_ids) == sorted(q.correct_answer_ids):
                         print(
-                            "CORRECT: {}\n{}".format(
-                                " and ".join(a.letter for a in q.correct_answers),
-                                "\n{}\n".format(q.postmortem) if q.postmortem else ""
-                            )
+                            f"CORRECT: {" and ".join(a.letter for a in q.correct_answers)}\n"
+                            f"{f"\n{q.postmortem}\n" if q.postmortem else ""}"
                         )
                         total_correct_count += 1
                     else:
                         if len(q.correct_answer_ids) != len(chosen_answer_ids):
 
                             print(
-                                "ERROR: the provided answer ('{}') is invalid.\n"
-                                "Please provide the correct amount of answer(s); eg. 'C', 'DA'.".format(answer.lower())
+                                f"ERROR: the provided answer ('{answer.lower()}') is invalid.\n"
+                                f"Please provide the correct amount of answer(s); eg. 'C', 'DA'."
                             )
 
                             answer = None
                         else:
                             if len(q.correct_answer_ids) == 1:
                                 print(
-                                    "FALSE: The correct answer is {}.\n{}".format(
-                                        q.correct_answers[0].letter,
-                                        "\n{}\n".format(q.postmortem) if q.postmortem else ""
-                                    )
+                                    f"FALSE: The correct answer is {q.correct_answers[0].letter}.\n"
+                                    f"{f"\n{q.postmortem}\n" if q.postmortem else ""}"
                                 )
                             else:
                                 print(
-                                    "FALSE: The correct answers are {}.\n\n{}\n".format(
-                                        " and ".join(a.letter for a in q.correct_answers),
-                                        textwrap.fill(q.postmortem, 100) if q.postmortem else ""
-                                    )
+                                    f"FALSE: The correct answers are "
+                                    f"{' and '.join(a.letter for a in q.correct_answers)}."
+                                    f"\n\n{textwrap.fill(q.postmortem, 100) if q.postmortem else ""}\n"
                                 )
                 else:
                     print(
-                        "ERROR: the provided answer ('{}') is invalid.\n"
-                        "Please provide answers from the above list; eg. 'C', 'DA'.".format(answer.lower())
+                        f"ERROR: the provided answer ('{answer.lower()}') is invalid.\n"
+                        f"Please provide answers from the above list; eg. 'C', 'DA'."
                     )
                     answer = None
 
@@ -226,7 +221,7 @@ class Dumpy:
             elif percent >= 60:
                 grade = "D"
 
-            print("CURRENT GRADE: " + grade + " ({}/{} correct)".format(total_correct_count, total_displayed_count))
+            print(f"CURRENT GRADE: {grade} ({total_correct_count}/{total_displayed_count} correct)")
             print("Press the enter key to continue.")
             input()
 
