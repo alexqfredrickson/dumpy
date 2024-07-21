@@ -1,7 +1,7 @@
 import os
 import json
 import sqlite3
-import textwrap
+import time
 from random import shuffle
 from models import Question, Answer
 
@@ -91,9 +91,22 @@ class Dumpy:
         Validates the local database, loads questions it, and begins the braindump.
         """
 
+        self.display_opening_credits()
         self.validate_database()
         self.load_questions()
         self.begin_braindump()
+
+    @staticmethod
+    def display_opening_credits():
+        print("THANK YOU FOR USING ....\n", end='', flush=True)
+        print("     _                             \n", end='', flush=True)
+        print("  __| |_   _ _ __ ___  _ __  _   _ \n", end='', flush=True)
+        print(" / _` | | | | '_ ` _ \\| '_ \\| | | |\n", end='', flush=True)
+        print("| (_| | |_| | | | | | | |_) | |_| |\n", end='', flush=True)
+        print(" \\__,_|\\__,_|_| |_| |_| .__/ \\__, |\n", end='', flush=True)
+        print("                      |_|    |___/\n\n", end='', flush=True)
+
+        time.sleep(1.5)
 
     def validate_database(self):
 
