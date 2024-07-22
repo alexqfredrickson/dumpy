@@ -7,40 +7,103 @@ from models import Question, Answer
 
 
 class Dumpy:
-    def __init__(self, questions=None):
-        self.questions = questions if questions else []
+    def __init__(self):
 
-        if "DUMPY_FILEPATH" not in os.environ:
-            print(f"ERROR: The environment variable `DUMPY_FILEPATH` was not set.")
-            exit(1)
-        else:
-            self.dumpyfile_path = os.environ["DUMPY_FILEPATH"]
+        print("THANK YOU FOR USING ....\n", end='', flush=True)
+        print("     _                             \n", end='', flush=True)
+        print("  __| |_   _ _ __ ___  _ __  _   _ \n", end='', flush=True)
+        print(" / _` | | | | '_ ` _ \\| '_ \\| | | |\n", end='', flush=True)
+        print("| (_| | |_| | | | | | | |_) | |_| |\n", end='', flush=True)
+        print(" \\__,_|\\__,_|_| |_| |_| .__/ \\__, |\n", end='', flush=True)
+        print("                      |_|    |___/\n\n", end='', flush=True)
 
-        if not os.path.exists(self.dumpyfile_path):
-            print(f"ERROR: {self.dumpyfile_path} was not found.")
-            exit(1)
+        time.sleep(1)
 
-        self.dumpyfile_name = os.path.basename(self.dumpyfile_path)
-
-        self.sqlite_context_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "contexts",
-            self.dumpyfile_name + ".db"
-        )
-
+        self.questions = []
         self.shuffle_answers = True
+
+        self.dumpyfile_path = os.environ["DUMPY_FILEPATH"] if "DUMPY_FILEPATH" in os.environ else None
+        self.dumpy_path = os.path.dirname(os.path.abspath(__file__))
+        self.databases_directory = os.path.join(self.dumpy_path, "databases")
+        self.dumpyfiles_directory = os.path.join(self.dumpy_path, "dumpyfiles")
+
+        for d in [self.databases_directory, self.dumpyfiles_directory]:
+            if not os.path.exists(d):
+                os.mkdir(d)
+
+        self.available_databases = os.listdir(self.databases_directory)
+
+        # this is just a convenience.  by convention, a single dumpyfile is specified in the environment
+        self.available_dumpyfiles = os.listdir(self.dumpyfiles_directory)
+
+        if len(self.available_databases) == 0:
+
+            # ensure dumpyfile was specified and exists
+            if not self.dumpyfile_path:
+                print(f"ERROR: The environment variable `DUMPY_FILEPATH` was not set.")
+                exit(1)
+
+            if not os.path.exists(self.dumpyfile_path):
+                print(f"ERROR: {self.dumpyfile_path} was not found.")
+                exit(1)
+
+            self.selected_database = os.path.join(self.dumpy_path, "databases", os.path.basename(self.dumpyfile_path.replace(".dumpy", "")) + ".db")
+            self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles", os.path.basename(self.dumpyfile_path))
+            self.import_dumpyfile()
+            self.execute_braindump()
+
+        else:
+            print("Please select an option (e.g. '1'):\n")
+
+            options = []
+
+            for ad in self.available_databases:
+                options.append(("LOAD", f"Load {ad}", ad.replace(".db", "")))
+
+            if self.dumpyfile_path:
+                options.append(("IMPORT", f"Import {self.dumpyfile_path}", self.dumpyfile_path))
+
+            for i in range(1, len(options) + 1):
+                print(f"    {i}. {options[i - 1][1]}")
+
+            print("")
+
+            selected_option = int(input())
+            selection = options[selected_option - 1]
+            selection_type = selection[0]
+
+            if selection_type == "LOAD":
+                selected_database_name = selection[2]
+                self.selected_database = os.path.join(self.dumpy_path, "databases", selected_database_name + ".db")
+                self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles",
+                                                       selected_database_name + ".dumpy")
+                self.execute_braindump()
+
+            elif selection_type == "IMPORT":
+
+                if self.dumpyfile_path:
+                    self.selected_database = os.path.join(self.dumpy_path, "databases", os.path.basename(
+                        self.dumpyfile_path.replace(".dumpy", "")) + ".db")
+                    self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles",
+                                                           os.path.basename(self.dumpyfile_path))
+                else:
+                    selected_database_name = self.available_databases[selected_option - 1].replace(".db", "")
+                    self.selected_database = os.path.join(self.dumpy_path, "databases", selected_database_name + ".db")
+                    self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles",
+                                                           selected_database_name + ".dumpy")
+
+                self.import_dumpyfile()
+                self.execute_braindump()
 
     def load_questions(self):
         """
         Validates the existence of the local dumpy database and loads all questions/answers from it.
         """
 
-        self.questions = []
-
         questions, answers, conn = None, None, None
 
         try:
-            conn = sqlite3.connect(self.sqlite_context_path)
+            conn = sqlite3.connect(self.selected_database)
             c = conn.cursor()
 
             c.execute("SELECT * FROM questions")
@@ -91,70 +154,8 @@ class Dumpy:
         Validates the local database, loads questions it, and begins the braindump.
         """
 
-        self.display_opening_credits()
-        self.validate_database()
         self.load_questions()
         self.begin_braindump()
-
-    @staticmethod
-    def display_opening_credits():
-        print("THANK YOU FOR USING ....\n", end='', flush=True)
-        print("     _                             \n", end='', flush=True)
-        print("  __| |_   _ _ __ ___  _ __  _   _ \n", end='', flush=True)
-        print(" / _` | | | | '_ ` _ \\| '_ \\| | | |\n", end='', flush=True)
-        print("| (_| | |_| | | | | | | |_) | |_| |\n", end='', flush=True)
-        print(" \\__,_|\\__,_|_| |_| |_| .__/ \\__, |\n", end='', flush=True)
-        print("                      |_|    |___/\n\n", end='', flush=True)
-
-        time.sleep(1.5)
-
-    def validate_database(self):
-
-        # check if database exists
-        if not os.path.exists(self.sqlite_context_path):
-            print(
-                f"INFO: A database with the specified context ({self.sqlite_context_path}) does not yet exist."
-            )
-
-            print(f"INFO: Attempting to create one from {self.dumpyfile_path}...")
-
-            self.create_context()
-
-            if not os.path.exists(self.sqlite_context_path):
-                print("ERROR: the dumpy database has not been created.")
-                exit(1)
-
-        try:  # check if questions table exists
-            conn = sqlite3.connect(self.sqlite_context_path)
-            c = conn.cursor()
-
-            c.execute("SELECT name FROM sqlite_master WHERE name='questions'")
-            questions_table_exists = c.fetchall()
-
-            conn.close()
-
-        except Exception as e:
-            print(e)
-            exit(1)
-
-        if not questions_table_exists:
-            print("ERROR: No questions table was found. Deleting local database...")
-
-        try:  # check to see if it actually has questions
-            conn = sqlite3.connect(self.sqlite_context_path)
-            c = conn.cursor()
-
-            c.execute("SELECT COUNT(*) FROM questions")
-            question_count = c.fetchall()
-
-            conn.close()
-
-        except Exception as e:
-            print(e)
-            exit(1)
-
-        if len(question_count) == 0:
-            self.delete_context("No questions were found.")
 
     def begin_braindump(self):
         """
@@ -227,128 +228,36 @@ class Dumpy:
             print("Press the enter key to continue.")
             input()
 
-    def create_context(self):
+    def import_dumpyfile(self):
         """
-        If the .dumpy file is valid, creates a local Dumpy database and inserts questions/answers into it.
-        """
-
-        self.validate_dumpyfile()
-        self.create_database_context()
-        self.import_dumpyfile()
-
-    def validate_dumpyfile(self):
-        """
-        Ensures the .dumpy file is properly formatted.
+        Creates a local database from a .dumpy file.
         """
 
-        try:
-            self.parse_dumpyfile(self.dumpyfile_path)
-        except json.decoder.JSONDecodeError as e:
-            print("ERROR: the .dumpy file has an invalid format.")
-            print(e)
-            exit(1)
+        if os.path.exists(self.selected_database):
+            os.remove(self.selected_database)
 
-        return True
+        if not os.path.exists(self.selected_database):
+            print(f"INFO: Importing {self.dumpyfile_path} into {self.selected_database} ...")
 
-    def create_database_context(self):
-        """
-        Creates a local, empty Dumpy database under '[project root]/contexts/'.
-        """
-
-        if not os.path.exists(os.path.dirname(self.sqlite_context_path)):
-            os.mkdir(os.path.dirname(self.sqlite_context_path))
-
-        conn = None
-
-        try:
-            conn = sqlite3.connect(self.sqlite_context_path)
-            c = conn.cursor()
-
-            c.execute(
+            self.execute_sqlite([
                 "CREATE TABLE questions ("
                 "`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,"
                 "`text`	TEXT NOT NULL,"
                 "`postmortem` TEXT"
-                ")"
-            )
+                ")",
 
-            c.execute(
                 "CREATE TABLE answers ("
                 " `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,"
                 " `question_id`	INTEGER NOT NULL,"
                 " `text`	TEXT NOT NULL,"
                 " `is_correct`	INTEGER NOT NULL DEFAULT 0"
                 ")"
-            )
+            ])
 
-            conn.commit()
-            conn.close()
+        self.load_dumpyfile_into_database()
 
-        except sqlite3.Error as e:
-            print(e)
-
-        finally:
-            if conn:
-                conn.close()
-
-    def import_dumpyfile(self):
-        """
-        Parses a .dumpy file and inserts this data into the local Dumpy database.
-        """
-
-        conn = None
-
-        try:
-            conn = sqlite3.connect(self.sqlite_context_path)
-            c = conn.cursor()
-
-            for q in self.questions:
-
-                question_id = q.question_id
-                question_text = q.text.replace(f"\'", "\'\'")
-                question_postmortem = q.postmortem.replace(f"\'", "\'\'") if q.postmortem else ""
-
-                c.execute(
-                    f"INSERT INTO questions VALUES ("
-                    f"{question_id},"
-                    f"'{question_text}',"
-                    f"'{question_postmortem}'"
-                    f")"
-                )
-
-                conn.commit()
-
-                for i in range(len(q.answers)):
-
-                    answer_question_id = q.answers[i].question_id
-                    answer_text = q.answers[i].text.replace("'", "''")
-                    answer_is_correct = 1 if q.answers[i].is_correct else 0
-
-                    c.execute(
-                        f"INSERT INTO answers (question_id, text, is_correct) VALUES ("
-                        f"{answer_question_id}, "
-                        f"'{answer_text}', "
-                        f"'{answer_is_correct}'"
-                        f")"
-                    )
-
-                    conn.commit()
-
-            conn.close()
-
-        except sqlite3.Error as e:
-            print(e)
-
-        finally:
-            if conn:
-                conn.close()
-
-    def parse_dumpyfile(self, dumpyfile_path):
-        """
-        Proves the existence of the local .dumpy file and inserts it into the local dumpy database.
-        """
-
-        with open(dumpyfile_path, 'r') as dumpyfile:
+    def load_dumpyfile_into_database(self):
+        with open(self.selected_dumpyfile, 'r') as dumpyfile:
             contents = json.loads(dumpyfile.read())
 
             question_count = len(contents["questions"])
@@ -388,12 +297,38 @@ class Dumpy:
 
                 self.questions.append(question)
 
-            print("INFO: Dumpyfile parsing complete.")
+            print(f"INFO: {self.selected_database} has been successfully created.\n")
 
-    def delete_context(self, message):
-        print(f"ERROR: {message} Deleting local database...")
-        os.remove(self.sqlite_context_path)
-        exit(1)
+        sql_statements = []
+
+        for q in self.questions:
+
+            question_id = q.question_id
+            question_text = q.text.replace(f"\'", "\'\'")
+            question_postmortem = q.postmortem.replace(f"\'", "\'\'") if q.postmortem else ""
+
+            sql_statements.append(
+                f"INSERT INTO questions VALUES ("
+                f"{question_id},"
+                f"'{question_text}',"
+                f"'{question_postmortem}'"
+                f")"
+            )
+
+            for i in range(len(q.answers)):
+                answer_question_id = q.answers[i].question_id
+                answer_text = q.answers[i].text.replace("'", "''")
+                answer_is_correct = 1 if q.answers[i].is_correct else 0
+
+                sql_statements.append(
+                    f"INSERT INTO answers (question_id, text, is_correct) VALUES ("
+                    f"{answer_question_id}, "
+                    f"'{answer_text}', "
+                    f"'{answer_is_correct}'"
+                    f")"
+                )
+
+        self.execute_sqlite(sql_statements)
 
     @staticmethod
     def generate_dumpyfile_friendly_json(dumpyfile_description, shuffle_answers, questions):
@@ -420,6 +355,30 @@ class Dumpy:
 
             return j
 
+    def execute_sqlite(self, sql_statements):
+        """
+        Executes some SQL.
+        """
+
+        conn = None
+
+        try:
+            conn = sqlite3.connect(self.selected_database)
+            c = conn.cursor()
+
+            for s in sql_statements:
+                c.execute(s)
+
+            conn.commit()
+            conn.close()
+
+        except sqlite3.Error as e:
+            print(e, s)
+
+        finally:
+            if conn:
+                conn.close()
+
 
 if __name__ == "__main__":
-    Dumpy().execute_braindump()
+    Dumpy()
