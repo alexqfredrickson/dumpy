@@ -2,7 +2,7 @@
 
 `dumpy` is a Python 3.7+ framework that issues multiple-choice quizzes - or "braindumps" - in your terminal.
 
-`dumpy` parses `dumpyfile`s into a local SQLite3 database. Questions are loaded from the database, from which CLI-based "braindumps" are administered.
+`dumpy` parses `dumpyfile`s into local SQLite3 databases. Questions are then loaded from databases, from which CLI-based "braindumps" are administered.
 
 ## configuration
 
@@ -69,3 +69,4 @@ To run a braindump:
 
 1. Set the `DUMPY_FILEPATH` environmental variable to point to a valid `dumpyfile`.
 2. Run `python3 dumpy.py`.
+3. Follow the prompts to import a `.dumpy` file, or run a braindump from an existing database.
