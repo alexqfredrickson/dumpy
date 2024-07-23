@@ -9,6 +9,7 @@ from models import Question, Answer
 class Dumpy:
     def __init__(self):
 
+        print("\n", end='', flush=True)
         print("THANK YOU FOR USING ....\n", end='', flush=True)
         print("     _                             \n", end='', flush=True)
         print("  __| |_   _ _ __ ___  _ __  _   _ \n", end='', flush=True)
@@ -47,10 +48,13 @@ class Dumpy:
                 print(f"ERROR: {self.dumpyfile_path} was not found.")
                 exit(1)
 
-            self.selected_database = os.path.join(self.dumpy_path, "databases", os.path.basename(self.dumpyfile_path.replace(".dumpy", "")) + ".db")
-            self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles", os.path.basename(self.dumpyfile_path))
+            self.selected_database = os.path.join(
+                self.databases_directory,
+                os.path.basename(self.dumpyfile_path.replace(".dumpy", "")) + ".db"
+            )
+
+            self.selected_dumpyfile = os.path.join(self.dumpyfiles_directory, os.path.basename(self.dumpyfile_path))
             self.import_dumpyfile()
-            self.execute_braindump()
 
         else:
             print("Please select an option (e.g. '1'):\n")
@@ -74,28 +78,32 @@ class Dumpy:
 
             if selection_type == "LOAD":
                 selected_database_name = selection[2]
-                self.selected_database = os.path.join(self.dumpy_path, "databases", selected_database_name + ".db")
-                self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles",
-                                                       selected_database_name + ".dumpy")
-                self.execute_braindump()
+                self.selected_database = os.path.join(self.databases_directory, selected_database_name + ".db")
+                self.selected_dumpyfile = os.path.join(self.dumpyfiles_directory, selected_database_name + ".dumpy")
 
             elif selection_type == "IMPORT":
 
                 if self.dumpyfile_path:
-                    self.selected_database = os.path.join(self.dumpy_path, "databases", os.path.basename(
-                        self.dumpyfile_path.replace(".dumpy", "")) + ".db")
-                    self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles",
-                                                           os.path.basename(self.dumpyfile_path))
+                    self.selected_database = os.path.join(
+                        self.databases_directory,
+                        os.path.basename(self.dumpyfile_path.replace(".dumpy", "")) + ".db"
+                    )
+
+                    self.selected_dumpyfile = os.path.join(
+                        self.dumpyfiles_directory, os.path.basename(self.dumpyfile_path)
+                    )
+
                 else:
                     selected_database_name = self.available_databases[selected_option - 1].replace(".db", "")
-                    self.selected_database = os.path.join(self.dumpy_path, "databases", selected_database_name + ".db")
-                    self.selected_dumpyfile = os.path.join(self.dumpy_path, "dumpyfiles",
-                                                           selected_database_name + ".dumpy")
+                    self.selected_database = os.path.join(self.databases_directory, selected_database_name + ".db")
+                    self.selected_dumpyfile = os.path.join(self.dumpyfiles_directory, selected_database_name + ".dumpy")
 
                 self.import_dumpyfile()
-                self.execute_braindump()
 
-    def load_questions(self):
+        self.load_questions_from_database()
+        self.begin_braindump()
+
+    def load_questions_from_database(self):
         """
         Validates the existence of the local dumpy database and loads all questions/answers from it.
         """
@@ -148,14 +156,6 @@ class Dumpy:
 
         for q in self.questions:
             q.assign_letters_to_answers()
-
-    def execute_braindump(self):
-        """
-        Validates the local database, loads questions it, and begins the braindump.
-        """
-
-        self.load_questions()
-        self.begin_braindump()
 
     def begin_braindump(self):
         """
@@ -233,9 +233,13 @@ class Dumpy:
         Creates a local database from a .dumpy file.
         """
 
+        sql_statements = []
+
+        # recreate the database if it exists
         if os.path.exists(self.selected_database):
             os.remove(self.selected_database)
 
+        # create the database; any self.execute_sqlite() operation will create it if it doesn't already exist
         if not os.path.exists(self.selected_database):
             print(f"INFO: Importing {self.dumpyfile_path} into {self.selected_database} ...")
 
@@ -254,52 +258,43 @@ class Dumpy:
                 ")"
             ])
 
-        self.load_dumpyfile_into_database()
-
-    def load_dumpyfile_into_database(self):
-        with open(self.selected_dumpyfile, 'r') as dumpyfile:
-            contents = json.loads(dumpyfile.read())
-
-            question_count = len(contents["questions"])
-
-            for i in range(question_count):
-
-                question = None
-
-                this_question = contents["questions"][i]
-
-                try:
-                    question = Question(
-                        question_id=i + 1,
-                        text=this_question["text"],
-                        postmortem=this_question["postmortem"] if "postmortem" in this_question else None,
-                        answers=[]
-                    )
-                except Exception as e:
-                    print(e)
-
-                answer_count = len(this_question["answers"])
-
-                for j in range(answer_count):
-                    answer = this_question["answers"][j]
-
-                    if "is_correct" not in answer:
-                        pass
-
-                    question.answers.append(
-                        Answer(
-                            answer_id=j + 1,
-                            question_id=i + 1,
-                            text=answer["text"],
-                            is_correct=answer["is_correct"]
-                        )
-                    )
-
-                self.questions.append(question)
-
             print(f"INFO: {self.selected_database} has been successfully created.\n")
 
-        sql_statements = []
+        with open(self.selected_dumpyfile, 'r') as dumpyfile:
+            dumpyfile_contents = json.loads(dumpyfile.read())
+
+        for i in range(len(dumpyfile_contents["questions"])):
+
+            question = None
+            this_question = dumpyfile_contents["questions"][i]
+
+            try:
+                question = Question(
+                    question_id=i + 1,
+                    text=this_question["text"],
+                    postmortem=this_question["postmortem"] if "postmortem" in this_question else None,
+                    answers=[]
+                )
+
+            except Exception as e:
+                print(e)
+
+            for j in range(len(this_question["answers"])):
+                answer = this_question["answers"][j]
+
+                if "is_correct" not in answer:
+                    pass
+
+                question.answers.append(
+                    Answer(
+                        answer_id=j + 1,
+                        question_id=i + 1,
+                        text=answer["text"],
+                        is_correct=answer["is_correct"]
+                    )
+                )
+
+            self.questions.append(question)
 
         for q in self.questions:
 
@@ -330,37 +325,12 @@ class Dumpy:
 
         self.execute_sqlite(sql_statements)
 
-    @staticmethod
-    def generate_dumpyfile_friendly_json(dumpyfile_description, shuffle_answers, questions):
-        """
-        Parses some dumpy questions into a dumpyfile-friendly JSON object.
-        """
-
-        j = {
-            "metadata": {
-                "description": dumpyfile_description,
-                "shuffle_answers": shuffle_answers
-            },
-            "questions": []
-        }
-
-        for q in questions:
-            j["questions"].append(
-                {
-                    "text": q.text,
-                    "answers": [{"text": f"{a.text}", "is_correct": f"{a.is_correct}"} for a in q.answers],
-                    "postmortem": q.postmortem
-                }
-            )
-
-            return j
-
     def execute_sqlite(self, sql_statements):
         """
         Executes some SQL.
         """
 
-        conn = None
+        s, conn = "", None
 
         try:
             conn = sqlite3.connect(self.selected_database)

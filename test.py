@@ -10,7 +10,7 @@ class DumpyTests(unittest.TestCase):
     @unittest.skip
     def test_example():
 
-        dumpy = Dumpy("example")
+        dumpy = Dumpy()
 
         metadata = Metadata(
             description="An example .dumpy file.",
@@ -41,6 +41,6 @@ class DumpyTests(unittest.TestCase):
             )
         ]
 
-        DumpyfileUtils.create(metadata, questions, dumpy.context)
+        DumpyfileUtils.create(metadata, questions, dumpy.dumpyfile_path)  # todo: test this
 
         dumpy.execute_braindump()

@@ -48,3 +48,27 @@ class DumpyfileUtils:
         with open(dumpyfile_path, 'w') as dumpyfile:
             dumpyfile.write(json_string)
 
+    @staticmethod
+    def generate_dumpyfile_json(dumpyfile_description, shuffle_answers, questions):
+        """
+        Parses some dumpy questions into a dumpyfile-friendly JSON object.
+        """
+
+        j = {
+            "metadata": {
+                "description": dumpyfile_description,
+                "shuffle_answers": shuffle_answers
+            },
+            "questions": []
+        }
+
+        for q in questions:
+            j["questions"].append(
+                {
+                    "text": q.text,
+                    "answers": [{"text": f"{a.text}", "is_correct": f"{a.is_correct}"} for a in q.answers],
+                    "postmortem": q.postmortem
+                }
+            )
+
+            return j
