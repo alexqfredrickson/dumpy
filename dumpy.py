@@ -196,7 +196,7 @@ class Dumpy:
 
                     else:
                         if len(q.correct_answer_ids) != len(chosen_answer_ids):
-                            print(f"ERROR: please provide exactly {len(chosen_answer_ids)} answer(s); eg. 'C', 'DA'.")
+                            print(f"ERROR: please provide exactly {len(q.correct_answer_ids)} answer(s); eg. 'C', 'DA'.")
                             answer = None
 
                         else:
