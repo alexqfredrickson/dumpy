@@ -1,3 +1,5 @@
+from random import shuffle
+
 """
 Objects parsed out from .dumpy files.
 """
@@ -11,11 +13,13 @@ class Metadata:
 
 
 class Question:
-    def __init__(self, text, answers, postmortem=None, question_id=None):
+    def __init__(self, text, answers, postmortem, attempted_count, correct_count, question_id=None):
+        self.question_id = int(question_id) if question_id else None
         self.text = str(text)
         self.answers = answers
-        self.question_id = int(question_id) if question_id else None
         self.postmortem = str(postmortem) if postmortem else None
+        self.attempted_count = attempted_count
+        self.correct_count = correct_count
 
     @property
     def correct_answers(self):
@@ -28,6 +32,9 @@ class Question:
     def assign_letters_to_answers(self):
         for i in range(len(self.answers)):
             self.answers[i].letter = chr(i + 65)
+
+    def shuffle_answers(self):
+        shuffle(self.answers)
 
 
 class Answer:

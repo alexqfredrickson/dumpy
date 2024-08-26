@@ -3,6 +3,7 @@ import json
 import sqlite3
 import datetime
 import time
+import random
 from random import shuffle
 from models import Question, Answer
 
@@ -112,11 +113,14 @@ class Dumpy:
         Validates the existence of the local dumpy database and loads all questions/answers from it.
         """
 
-        questions, answers, conn = None, None, None
+        questions, answers, metadata, conn = None, None, None, None
 
         try:
             conn = sqlite3.connect(self.selected_database)
             c = conn.cursor()
+
+            c.execute("SELECT * FROM metadata")
+            metadata = c.fetchone()
 
             c.execute("SELECT * FROM questions")
             questions = c.fetchall()
@@ -137,6 +141,10 @@ class Dumpy:
             print("ERROR: the database is empty and will need to be deleted and re-imported.")
             exit(1)
 
+        self.description = metadata[0]
+        self.shuffle_answers = metadata[1]
+        self.shuffle_questions_by_weight = metadata[2]
+
         answers = [
             Answer(
                 answer_id=a[0],
@@ -153,14 +161,24 @@ class Dumpy:
                     question_id=q[0],
                     text=q[1],
                     postmortem=q[2],
-                    answers=[a for a in answers if int(a.question_id) == q[0]]
+                    answers=[a for a in answers if int(a.question_id) == q[0]],
+                    attempted_count=q[3],
+                    correct_count=q[4]
                 )
                 for q in questions
             ]
         )
 
         if self.shuffle_answers:
+            [q.shuffle_answers() for q in self.questions]
+
+        # idea here is to perform a simple weighted shuffle based on how often questions have been seen before.
+        # weights with '0' are ignored by the lambda, so do an initial shuffle prior to the weighted one.
+        if self.shuffle_questions_by_weight:
             shuffle(self.questions)
+            self.questions.sort(key=lambda q: random.random() * q.attempted_count)
+
+        print([q.attempted_count for q in self.questions])
 
         for q in self.questions:
             q.assign_letters_to_answers()
@@ -317,7 +335,9 @@ class Dumpy:
                     question_id=i + 1,
                     text=this_question["text"],
                     postmortem=this_question["postmortem"] if "postmortem" in this_question else None,
-                    answers=[]
+                    answers=[],
+                    attempted_count=0,
+                    correct_count=0
                 )
 
             except Exception as e:
