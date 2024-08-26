@@ -1,6 +1,7 @@
 import os
 import json
 import sqlite3
+import datetime
 import time
 from random import shuffle
 from models import Question, Answer
@@ -21,7 +22,10 @@ class Dumpy:
         time.sleep(1)
 
         self.questions = []
-        self.shuffle_answers = True
+
+        self.description = None
+        self.shuffle_answers = None
+        self.shuffle_questions_by_weight = None
 
         self.dumpyfile_path = os.environ["DUMPY_FILEPATH"] if "DUMPY_FILEPATH" in os.environ else None
         self.dumpy_path = os.path.dirname(os.path.abspath(__file__))
@@ -129,6 +133,10 @@ class Dumpy:
             if conn:
                 conn.close()
 
+        if len(questions) == 0 or len(answers) == 0:
+            print("ERROR: the database is empty and will need to be deleted and re-imported.")
+            exit(1)
+
         answers = [
             Answer(
                 answer_id=a[0],
@@ -192,11 +200,21 @@ class Dumpy:
 
                     if sorted(chosen_answer_ids) == sorted(q.correct_answer_ids):
                         print(f"CORRECT: {correct_answers}\n{postmortem}")
+
+                        self.execute_sqlite([
+                            f"UPDATE questions SET attempted_count = attempted_count + 1 WHERE id = {q.question_id}",
+                            f"UPDATE questions SET correct_count = correct_count + 1 WHERE id = {q.question_id}",
+                        ])
+
                         total_correct_count += 1
 
                     else:
                         if len(q.correct_answer_ids) != len(chosen_answer_ids):
-                            print(f"ERROR: please provide exactly {len(q.correct_answer_ids)} answer(s); eg. 'C', 'DA'.")
+
+                            print(
+                                f"ERROR: please provide exactly {len(q.correct_answer_ids)} answer(s); eg. 'C', 'DA'."
+                            )
+
                             answer = None
 
                         else:
@@ -204,6 +222,10 @@ class Dumpy:
                                 print(f"FALSE: The correct answer is {q.correct_answers[0].letter}.\n{postmortem}")
                             else:
                                 print(f"FALSE: The correct answers are {correct_answers}.\n{postmortem}")
+
+                            self.execute_sqlite([
+                                f"UPDATE questions SET attempted_count = attempted_count + 1 WHERE id = {q.question_id}"
+                            ])
                 else:
                     print(
                         f"ERROR: the provided answer ('{answer.lower()}') is invalid.\n"
@@ -244,10 +266,19 @@ class Dumpy:
             print(f"INFO: Importing {self.dumpyfile_path} into {self.selected_database} ...")
 
             self.execute_sqlite([
+                "CREATE TABLE metadata ("
+                "`description` TEXT,"
+                "`shuffle_answers` INTEGER DEFAULT 0,"
+                "`shuffle_questions_by_weight` INTEGER DEFAULT 1,"
+                "`database_created_time` TEXT"
+                ")",
+
                 "CREATE TABLE questions ("
                 "`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,"
                 "`text`	TEXT NOT NULL,"
-                "`postmortem` TEXT"
+                "`postmortem` TEXT,"
+                "`attempted_count` INTEGER DEFAULT 0,"
+                "`correct_count` INTEGER DEFAULT 0"
                 ")",
 
                 "CREATE TABLE answers ("
@@ -262,6 +293,19 @@ class Dumpy:
 
         with open(self.selected_dumpyfile, 'r') as dumpyfile:
             dumpyfile_contents = json.loads(dumpyfile.read())
+
+        self.description = dumpyfile_contents["metadata"]["description"]
+        self.shuffle_answers = dumpyfile_contents["metadata"]["shuffle_answers"]
+        self.shuffle_questions_by_weight = dumpyfile_contents["metadata"]["shuffle_questions_by_weight"]
+
+        sql_statements.append(
+            f"INSERT INTO metadata VALUES ("
+            f"\"{dumpyfile_contents["metadata"]["description"]}\", "
+            f"\"{1 if dumpyfile_contents["metadata"]["shuffle_answers"] else 0}\", "
+            f"\"{1 if dumpyfile_contents["metadata"]["shuffle_questions_by_weight"] else 0}\", "
+            f"\"{datetime.datetime.now()}\""
+            f")"
+        )
 
         for i in range(len(dumpyfile_contents["questions"])):
 
@@ -306,7 +350,9 @@ class Dumpy:
                 f"INSERT INTO questions VALUES ("
                 f"{question_id},"
                 f"'{question_text}',"
-                f"'{question_postmortem}'"
+                f"'{question_postmortem}',"
+                f"'0',"  # attempted_count
+                f"'0'"  # correct_count
                 f")"
             )
 

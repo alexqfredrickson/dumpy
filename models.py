@@ -4,9 +4,10 @@ Objects parsed out from .dumpy files.
 
 
 class Metadata:
-    def __init__(self, description, shuffle_answers=True):
+    def __init__(self, description, shuffle_answers=False, shuffle_questions_by_weight=False):
         self.description = description
         self.shuffle_answers = shuffle_answers
+        self.shuffle_questions_by_weight = shuffle_questions_by_weight
 
 
 class Question:
