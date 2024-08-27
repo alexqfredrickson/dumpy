@@ -5,7 +5,7 @@ import datetime
 import time
 import random
 from random import shuffle
-from models import Question, Answer
+from models import Question, Answer, TerminalColors
 
 
 class Dumpy:
@@ -220,7 +220,7 @@ class Dumpy:
                     postmortem = f"\n{q.postmortem}\n" if q.postmortem else ""
 
                     if sorted(chosen_answer_ids) == sorted(q.correct_answer_ids):
-                        print(f"CORRECT: {correct_answers}\n{postmortem}")
+                        print(f"{TerminalColors.OKGREEN}CORRECT{TerminalColors.ENDC}: {correct_answers}\n{postmortem}")
 
                         self.execute_sqlite([
                             f"UPDATE questions SET attempted_count = attempted_count + 1 WHERE id = {q.question_id}",
@@ -240,9 +240,11 @@ class Dumpy:
 
                         else:
                             if len(q.correct_answer_ids) == 1:
-                                print(f"FALSE: The correct answer is {q.correct_answers[0].letter}.\n{postmortem}")
+                                print(f"{TerminalColors.WARNING}FALSE{TerminalColors.ENDC}: The correct answer "
+                                      f"is {q.correct_answers[0].letter}.\n{postmortem}")
                             else:
-                                print(f"FALSE: The correct answers are {correct_answers}.\n{postmortem}")
+                                print(f"{TerminalColors.WARNING}FALSE{TerminalColors.ENDC}: The correct answers "
+                                      f"are {correct_answers}.\n{postmortem}")
 
                             self.execute_sqlite([
                                 f"UPDATE questions SET attempted_count = attempted_count + 1 WHERE id = {q.question_id}"
@@ -256,16 +258,16 @@ class Dumpy:
 
             percent = (total_correct_count / total_displayed_count) * 100
 
-            grade = "F"
+            grade = f"{TerminalColors.WARNING}F{TerminalColors.ENDC}"
 
             if percent >= 90:
-                grade = "A"
+                grade = f"{TerminalColors.OKGREEN}A{TerminalColors.ENDC}"
             elif percent >= 80:
-                grade = "B"
+                grade = f"{TerminalColors.OKGREEN}B{TerminalColors.ENDC}"
             elif percent >= 70:
-                grade = "C"
+                grade = f"{TerminalColors.OKGREEN}C{TerminalColors.ENDC}"
             elif percent >= 60:
-                grade = "D"
+                grade = f"{TerminalColors.WARNING}D{TerminalColors.ENDC}"
 
             print(f"CURRENT GRADE: {grade} ({total_correct_count}/{total_displayed_count} correct)")
             print("Press the enter key to continue.")
