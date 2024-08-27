@@ -172,13 +172,16 @@ class Dumpy:
         if self.shuffle_answers:
             [q.shuffle_answers() for q in self.questions]
 
-        # idea here is to perform a simple weighted shuffle based on how often questions have been seen before.
+        # idea here is to perform a simple weighted shuffle based on how often questions have been answered correctly.
         # weights with '0' are ignored by the lambda, so do an initial shuffle prior to the weighted one.
         if self.shuffle_questions_by_weight:
             shuffle(self.questions)
-            self.questions.sort(key=lambda q: random.random() * q.attempted_count)
 
-        print([q.attempted_count for q in self.questions])
+            self.questions.sort(
+                key=lambda q: (random.random() * (q.correct_count / q.attempted_count)) if q.attempted_count > 0 else 0
+            )
+
+            # print([(q.correct_count / q.attempted_count) if q.attempted_count > 0 else 0 for q in self.questions])
 
         for q in self.questions:
             q.assign_letters_to_answers()
