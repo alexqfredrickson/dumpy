@@ -13,13 +13,14 @@ class Metadata:
 
 
 class Question:
-    def __init__(self, text, answers, postmortem, attempted_count, correct_count, question_id=None):
+    def __init__(self, text, answers, postmortem, attempted_count, correct_count, enabled, question_id=None):
         self.question_id = int(question_id) if question_id else None
         self.text = str(text)
         self.answers = answers
         self.postmortem = str(postmortem) if postmortem else None
         self.attempted_count = attempted_count
         self.correct_count = correct_count
+        self.enabled = enabled
 
     @property
     def correct_answers(self):

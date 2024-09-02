@@ -163,7 +163,8 @@ class Dumpy:
                     postmortem=q[2],
                     answers=[a for a in answers if int(a.question_id) == q[0]],
                     attempted_count=q[3],
-                    correct_count=q[4]
+                    correct_count=q[4],
+                    enabled=q[5]
                 )
                 for q in questions
             ]
@@ -181,10 +182,10 @@ class Dumpy:
                 key=lambda q: (random.random() * (q.correct_count / q.attempted_count)) if q.attempted_count > 0 else 0
             )
 
-            # print([(q.correct_count / q.attempted_count) if q.attempted_count > 0 else 0 for q in self.questions])
-
         for q in self.questions:
             q.assign_letters_to_answers()
+
+        self.questions = [q for q in self.questions if q.enabled == 1]
 
     def begin_braindump(self):
         """
@@ -301,7 +302,8 @@ class Dumpy:
                 "`text`	TEXT NOT NULL,"
                 "`postmortem` TEXT,"
                 "`attempted_count` INTEGER DEFAULT 0,"
-                "`correct_count` INTEGER DEFAULT 0"
+                "`correct_count` INTEGER DEFAULT 0",
+                "`enabled` INTEGER DEFAULT 1"
                 ")",
 
                 "CREATE TABLE answers ("
@@ -342,7 +344,8 @@ class Dumpy:
                     postmortem=this_question["postmortem"] if "postmortem" in this_question else None,
                     answers=[],
                     attempted_count=0,
-                    correct_count=0
+                    correct_count=0,
+                    enabled=True
                 )
 
             except Exception as e:
@@ -377,7 +380,8 @@ class Dumpy:
                 f"'{question_text}',"
                 f"'{question_postmortem}',"
                 f"'0',"  # attempted_count
-                f"'0'"  # correct_count
+                f"'0',"  # correct_count
+                f"'1'"  # enabled
                 f")"
             )
 
