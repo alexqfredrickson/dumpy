@@ -295,23 +295,23 @@ class Dumpy:
                 "`shuffle_answers` INTEGER DEFAULT 0,"
                 "`shuffle_questions_by_weight` INTEGER DEFAULT 1,"
                 "`database_created_time` TEXT"
-                ")",
+                ");",
 
                 "CREATE TABLE questions ("
                 "`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,"
                 "`text`	TEXT NOT NULL,"
                 "`postmortem` TEXT,"
                 "`attempted_count` INTEGER DEFAULT 0,"
-                "`correct_count` INTEGER DEFAULT 0",
+                "`correct_count` INTEGER DEFAULT 0,"
                 "`enabled` INTEGER DEFAULT 1"
-                ")",
+                ");",
 
                 "CREATE TABLE answers ("
                 " `id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,"
                 " `question_id`	INTEGER NOT NULL,"
                 " `text`	TEXT NOT NULL,"
                 " `is_correct`	INTEGER NOT NULL DEFAULT 0"
-                ")"
+                ");"
             ])
 
             print(f"INFO: {self.selected_database} has been successfully created.\n")
