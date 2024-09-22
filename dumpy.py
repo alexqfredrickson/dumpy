@@ -192,13 +192,13 @@ class Dumpy:
         Starts the test.
         """
 
-        total_correct_count = 0
-        total_displayed_count = 0
+        current_session_correct_count = 0
+        current_session_displayed_count = 0
 
         for q in self.questions:
             os.system('cls' if os.name == 'nt' else 'clear')
 
-            total_displayed_count += 1
+            current_session_displayed_count += 1
             valid_answer_choices = [a.letter.lower() for a in q.answers]
 
             print(f"{q.text}\n")
@@ -228,7 +228,7 @@ class Dumpy:
                             f"UPDATE questions SET correct_count = correct_count + 1 WHERE id = {q.question_id}",
                         ])
 
-                        total_correct_count += 1
+                        current_session_correct_count += 1
 
                     else:
                         if len(q.correct_answer_ids) != len(chosen_answer_ids):
@@ -257,22 +257,66 @@ class Dumpy:
                     )
                     answer = None
 
-            percent = (total_correct_count / total_displayed_count) * 100
-
-            grade = f"{TerminalColors.WARNING}F{TerminalColors.ENDC}"
-
-            if percent >= 90:
-                grade = f"{TerminalColors.OKGREEN}A{TerminalColors.ENDC}"
-            elif percent >= 80:
-                grade = f"{TerminalColors.OKGREEN}B{TerminalColors.ENDC}"
-            elif percent >= 70:
-                grade = f"{TerminalColors.OKGREEN}C{TerminalColors.ENDC}"
-            elif percent >= 60:
-                grade = f"{TerminalColors.WARNING}D{TerminalColors.ENDC}"
-
-            print(f"CURRENT GRADE: {grade} ({total_correct_count}/{total_displayed_count} correct)")
-            print("Press the enter key to continue.")
+            self.print_current_session_grade(current_session_correct_count, current_session_displayed_count)
+            self.print_overall_grade()
+            print("\nPress the enter key to continue.")
             input()
+
+    def print_overall_grade(self):
+        overall_attempted_count = self.execute_sqlite(
+            ["SELECT COUNT(*) FROM questions WHERE attempted_count > 0"],
+            fetch_one=True
+        )
+
+        overall_correct_at_least_once_count =self.execute_sqlite(
+            ["SELECT COUNT(*) FROM questions WHERE correct_count > 0"],
+            fetch_one=True
+        )
+
+        unseen_count = self.execute_sqlite(
+            ["SELECT COUNT(*) FROM questions WHERE attempted_count = 0"],
+            fetch_one=True
+        )
+
+        overall_percent = (overall_correct_at_least_once_count / overall_attempted_count) * 100
+
+        overall_grade = f"{TerminalColors.WARNING}F{TerminalColors.ENDC}"
+
+        if overall_percent >= 90:
+            overall_grade = f"{TerminalColors.OKGREEN}A{TerminalColors.ENDC}"
+        elif overall_percent >= 80:
+            overall_grade = f"{TerminalColors.OKGREEN}B{TerminalColors.ENDC}"
+        elif overall_percent >= 70:
+            overall_grade = f"{TerminalColors.OKGREEN}C{TerminalColors.ENDC}"
+        elif overall_percent >= 60:
+            overall_grade = f"{TerminalColors.WARNING}D{TerminalColors.ENDC}"
+
+        print(
+            f"OVERALL GRADE: {overall_grade} ("
+            f"{overall_correct_at_least_once_count}/{overall_attempted_count} correct at-least-once, "
+            f"{unseen_count} unseen"
+            f")"
+        )
+
+    @staticmethod
+    def print_current_session_grade(current_session_correct_count, current_session_displayed_count):
+        current_session_percent = (current_session_correct_count / current_session_displayed_count) * 100
+
+        current_session_grade = f"{TerminalColors.WARNING}F{TerminalColors.ENDC}"
+
+        if current_session_percent >= 90:
+            current_session_grade = f"{TerminalColors.OKGREEN}A{TerminalColors.ENDC}"
+        elif current_session_percent >= 80:
+            current_session_grade = f"{TerminalColors.OKGREEN}B{TerminalColors.ENDC}"
+        elif current_session_percent >= 70:
+            current_session_grade = f"{TerminalColors.OKGREEN}C{TerminalColors.ENDC}"
+        elif current_session_percent >= 60:
+            current_session_grade = f"{TerminalColors.WARNING}D{TerminalColors.ENDC}"
+
+        print(
+            f"CURRENT GRADE: {current_session_grade} ("
+            f"{current_session_correct_count}/{current_session_displayed_count} correct)"
+        )
 
     def import_dumpyfile(self):
         """
@@ -400,12 +444,12 @@ class Dumpy:
 
         self.execute_sqlite(sql_statements)
 
-    def execute_sqlite(self, sql_statements):
+    def execute_sqlite(self, sql_statements, fetch_one=False):
         """
         Executes some SQL.
         """
 
-        s, conn = "", None
+        s, conn, results = "", None, []
 
         try:
             conn = sqlite3.connect(self.selected_database)
@@ -413,6 +457,9 @@ class Dumpy:
 
             for s in sql_statements:
                 c.execute(s)
+
+                if fetch_one:
+                    results.append(c.fetchone()[0])
 
             conn.commit()
             conn.close()
@@ -423,6 +470,13 @@ class Dumpy:
         finally:
             if conn:
                 conn.close()
+
+        if fetch_one:
+
+            if len(results) == 1:
+                return results[0]
+
+            return results
 
 
 if __name__ == "__main__":
